@@ -1,4 +1,4 @@
-local NAME, MAJOR, MINOR = "LibHighlight", "LibHighlight-1.0", 1
+local NAME, MAJOR, MINOR = "LuaTokenizer", "LuaTokenizer-1.0", 1
 local Lib = {};
 if LibStub then
 	Lib = LibStub:NewLibrary(MAJOR, MINOR);
@@ -239,30 +239,4 @@ function Lib:Tokenize(str, transform)
 	
 	state1();
 	return node;
-end
-
-local tl_bnop = tflip({"^","/","*","+","-","%","=","..","<",">","<=",">=",
-                 "==","~=","and","or"})
-local tl_unop = tflip({"#","-","not"})
-local tl_fsep = tflip({",",";"})
-local token   = { NUMBER="|cff2aa198", KEYWORD="|cff268bd2", ID      ="|cff93a1a1",
-                  STRING="|cff859900", COMMENT="|cff586e75", GLOBALID="|cffd33682",
-                  HEXNUM="|cff268bd2", ERROR  ="|cffdc322f", MLSTRING="|cffb58900",}
-
-local function cb(t, LS, LE, CS, CE, V, ...)
-	if t == "\t" then -- normalizes tabs
-		return '    ';
-	elseif t == "NEWLINE" then -- normalizes newlines
-		return "\r\n";
-	elseif token[t] then
-		return ('%s%s|r'):format(token[t], V);
-	end
-	return V or t;
-end
-function Lib:Highlight(str)
-	return table.concat(self:Tokenize(str, cb));
-end
-
-function Lib:StripColors(str)
-	return str:gsub("||","|!"):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|!","||");
 end
