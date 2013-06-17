@@ -1,4 +1,4 @@
-dofile("LibHighlight-1.0.lua");
+dofile("../LuaTokenizer-1.0.lua");
 local io = require("io");
 
 ---
@@ -23,9 +23,9 @@ for i=1, #tokens do
 	print("Token", t.T, "Value", t.V, "LastChar", t.CE, "LastLine", t.LE);
 end]=]
 
-local tokens = { NUMBER="|c2aa198", KEYWORD="|c268bd2", ID="|c93a1a1",
-	GLOBALID="|cd33682", COMMENT="|c586e75", ERROR="|cdc322f", HEXNUM="|c268bd2",
-	STRING="|c859900",MLSTRING="|cb58900",}
+local tokens = { NUMBER="2aa198", KEYWORD="268bd2", ID="93a1a1",
+	GLOBALID="d33682", COMMENT="586e75", ERROR="dc322f", HEXNUM="268bd2",
+	STRING="859900",MLSTRING="b58900",}
 local state, kwstates;
 local upvalues = {};
 local keywords = tflip({"and","break","do","else","elseif","end","false","for",
@@ -191,7 +191,6 @@ local function transform(...)
 	return state(...);
 end
 
---io.write(unpack(LibHighlight:Tokenize(str, transform)));
-io.write(LibHighlight:Highlight(str));
+io.write(unpack(LuaTokenizer:Tokenize(str, transform)));
 
 
