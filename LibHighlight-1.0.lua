@@ -28,8 +28,7 @@ local function tflip(tbl)
 	return r;
 end
 
-local tl_line     = tflip({ "\n","\11","\12","\r","\r\n","\133",
-                    "\32\41" }) -- unicode
+local tl_line     = tflip({ "\n","\11","\12","\r","\r\n" }) -- TODO unicode?
 local tl_singlec  = tflip({ "^","/","*","+","-","%","=","#","-",",","[","]","(",
                     ")","{","}",":","."," ","\t",";" })
 local tl_idstart  = tflip({ "_","A","B","C","D","E","F","G","H","I","J","K","L",
@@ -40,7 +39,7 @@ local tl_numstrt  = tflip({ "-",".","0","1","2","3","4","5","6","7","8","9" })
 local tl_eqstart  = tflip({ "<",">","=","~" })
 local tl_anystart = tflip({ "<",">","=","~",".","-","<",">","=","^","/","*","+",
                     "-","%","#","-",",","[","]","(",")","{","}",":","."," ",";",
-					"\t","\r" })
+					"\t","\r","\n" })
 local tl_anyfull  = tflip({ "<=",">=","==","~=","..","--","...","<",">","=","^",
                     "/","*","+","-","%","#","-",",","[","]","(",")","{","}",":",
 					"."," ","\t",";","\n","\11","\12","\r","\r\n","\133" })
@@ -67,7 +66,7 @@ function Lib:Tokenize(str, transform)
 	
 	local function finish() -- finish a previous token
 		if #stack > 0 then
-			node[#node+1] = transform("ERROR", nil, ln, nil, pos, tconcat(stack));
+			node[#node+1] = transform("ERROR",nil,ln,nil,pos,tconcat(stack));
 			stack = {};
 		end
 	end
@@ -254,7 +253,7 @@ local function cb(t, LS, LE, CS, CE, V, ...)
 	if t == "\t" then -- normalizes tabs
 		return '    ';
 	elseif t == "NEWLINE" then -- normalizes newlines
-		return "\n";
+		return "\r\n";
 	elseif token[t] then
 		return ('%s%s|r'):format(token[t], V);
 	end
@@ -265,5 +264,5 @@ function Lib:Highlight(str)
 end
 
 function Lib:StripColors(str)
-	return str:gsub("|c%x%x%x%x%x%x",""):gsub("|r","");
+	return str:gsub("||","|!"):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|!","||");
 end
