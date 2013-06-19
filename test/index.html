@@ -14,19 +14,25 @@
 				background: #002b36;
 				color: #839496;
 			}
-			.keyword {
-				color: #268bd2;
-				font-weight: bold;
-			}
-			.number {	color: #2aa198; }
-			.hexnum {	color: #268bd2; }
-			.string {	color: #859900; }
+			#code     { position: relative;
+						padding-left: 2em; }
+			#tooltip  { position: absolute;
+						top: 0; left: 0; }
+			.keyword  { color: #268bd2;
+						font-weight: bold; }
+			.number   {	color: #2aa198; }
+			.hexnum   {	color: #268bd2; }
+			.string   {	color: #859900; }
 			.mlstring {	color: #b58900; }
-			.comment {	color: #586e75; }
-			.id 	{	color: #93a1a1; }
+			.comment  {	color: #586e75; }
+			.id 	  {	color: #93a1a1; }
 			.globalid {	color: #d33682; }
-			.error {	color: #dc322f; }
-			.newline {	color: #073642; }
+			.error    {	color: #dc322f; }
+			.newline  {	color: #073642; }
+			.linenum  { position: absolute;
+						left: -1em;
+						background: #555;
+						padding: 0 .2em; }
 		</style>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 		<script>
@@ -35,11 +41,16 @@
 					$("#code").html(data);
 					setTimeout(foo, 500);
 				})
+				$("#code span").enter(function() {
+					$("#tooltip").left($(this).left())
+					$("#tooltip").top($(this).top())
+				});
 			}
 			$(foo);
 		</script>
 	</head>
 	<body>
+		<div id="tooltip">x</div>
 		<pre id="code"></pre>
 	</body>
 </html>
