@@ -1,34 +1,32 @@
 <html>
 	<head>
 		<style>
-			/* http://ethanschoonover.com/solarized#usage-development
-			   $base03:    #002b36;    $base02:    #073642;
-			   $base01:    #586e75;    $base00:    #657b83;
-			   $base0:     #839496;    $base1:     #93a1a1;
-			   $base2:     #eee8d5;    $base3:     #fdf6e3;
-			   $yellow:    #b58900;    $orange:    #cb4b16;
-			   $red:       #dc322f;    $magenta:   #d33682;
-			   $violet:    #6c71c4;    $blue:      #268bd2;
-			   $cyan:      #2aa198;    $green:     #859900; */
 			html {
-				background: #002b36;
+				background: #293134;
 				color: #839496;
 			}
 			#code     { position: relative;
 						padding-left: 2em; }
 			#tooltip  { position: absolute;
-						top: 0; left: 0; }
-			.keyword  { color: #268bd2;
+						z-index: 1000;
+						top: 0; left: 0;
+						display: none;
+						background: #ccc;
+						border: 2px solid black;
+						border-radius: .5em;
+						padding: .2em .4em;}
+			.keyword  { color: #93C763;
 						font-weight: bold; }
-			.number   {	color: #2aa198; }
-			.hexnum   {	color: #268bd2; }
-			.string   {	color: #859900; }
-			.mlstring {	color: #b58900; }
-			.comment  {	color: #586e75; }
-			.id 	  {	color: #93a1a1; }
+			.number   {	color: #FFCD22; }
+			.hexnum   {	color: #FFCD22; }
+			.string   {	color: #EC7600; }
+			.mlstring {	color: #EC7600; }
+			.comment  {	color: #66747B; }
+			.id 	  {	color: #e0e2e4; }
 			.globalid {	color: #d33682; }
 			.error    {	color: #dc322f; }
 			.newline  {	color: #073642; }
+			.operator { color: #E8E2B7; }
 			.linenum  { position: absolute;
 						left: -1em;
 						background: #555;
@@ -36,14 +34,27 @@
 		</style>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 		<script>
+			var lastdata = "";
 			function foo() {
-				$.get("Test.php", function(data) {
-					$("#code").html(data);
-					setTimeout(foo, 500);
+				$.ajax({
+					url: "Test.php",
+					contentType: "text/text",
+					success: function(data) {
+						if ((data != lastdata)) {
+							lastdata = data;
+							$("#code").html(data);
+						}
+						setTimeout(foo, 500);
+					},
 				})
-				$("#code span").enter(function() {
-					$("#tooltip").left($(this).left())
-					$("#tooltip").top($(this).top())
+				$("#code span").hover(function() {
+					var $tt = $("#tooltip");
+					var $this = $(this);
+					var offset = $this.offset();
+					offset.top += 15;
+					$tt.offset(offset)
+					$tt.show()
+					$tt.html("Token:"+$this.data("tt")+", CS:"+$this.data("cs")+", CE:"+$this.data("ce"))
 				});
 			}
 			$(foo);
