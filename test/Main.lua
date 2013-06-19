@@ -46,6 +46,6 @@ local r, e = loadstring(str, "input")
 if e then 
 	local line, err = e:match("^%[string \"input\"%]:(%d+):(.*)$");
 	print("\n\n");
-	print(line, err);
+	print("Error:", line, err);
 end
 
