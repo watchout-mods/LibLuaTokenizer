@@ -19,7 +19,7 @@ do
 		["%"]=op,["#"]=op,["-"]=op,[","]=op,["["]=op,["]"]=op,["("]=op,[")"]=op,
 		["{"]=op,["}"]=op,[":"]=op,["."]=op,[";"]=op, }
 
-	local function cb(t, LS, LE, CS, CE, V, ...)
+	local function cb(t, V, LS, LE, CS, CE, ...)
 		if t == "\t" then -- normalizes tabs
 			return '    ';
 		elseif t == "NEWLINE" then -- normalizes newlines

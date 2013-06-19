@@ -54,8 +54,9 @@ local keywords = tflip({"and","break","do","else","elseif","end","false","for",
 	"function","if","in","local","nil","not","or","repeat","return","then",
 	"true","until","while"})
 
-local function default_transform(token, LS, LE, CS, CE, V, ...)
-	return {token, LS, LE, CS, CE, V, ...};
+local function default_transform(...)
+	-- token, V, LS, LE, CS, CE, ... = ...
+	return {...};
 end
 
 
@@ -66,7 +67,7 @@ function Lib:Tokenize(str, transform)
 	
 	local function finish() -- finish a previous token
 		if #stack > 0 then
-			node[#node+1] = transform("ERROR",nil,ln,nil,pos,tconcat(stack));
+			node[#node+1] = transform("ERROR",tconcat(stack),nil,ln,nil,pos);
 			stack = {};
 		end
 	end
@@ -81,7 +82,7 @@ function Lib:Tokenize(str, transform)
 				pos = pos + (#w-1);
 				
 				if tl_line[w] then
-					node[#node+1] = transform("NEWLINE",nil,ln,nil,pos,w);
+					node[#node+1] = transform("NEWLINE",w,nil,ln,nil,pos);
 					ln = ln + 1;
 				elseif w == "[" then -- Multi-line string
 					local a, b, t = str:find("^%[(=*)%[", pos);
@@ -89,18 +90,18 @@ function Lib:Tokenize(str, transform)
 						pos = b + 1;
 						stack[#stack+1] = ("[%s["):format(t);
 						state3(t);
-						node[#node+1] = transform("MLSTRING",nil,ln,nil,pos,tconcat(stack),t)
+						node[#node+1] = transform("MLSTRING",tconcat(stack),nil,ln,nil,pos,t)
 						stack = {}
 					else
-						node[#node+1] = transform(w, nil, ln, nil, pos, w);
+						node[#node+1] = transform(w, w, nil, ln, nil, pos);
 					end
 				elseif w == "--" then
 					stack[#stack+1] = "--";
 					state4();
-					node[#node+1] = transform("COMMENT",nil,ln,nil,pos,tconcat(stack))
+					node[#node+1] = transform("COMMENT",tconcat(stack),nil,ln,nil,pos)
 					stack = {};
 				elseif tl_anyfull[w] then
-					node[#node+1] = transform(tl_anyfull[w],nil,ln,nil,pos,w);
+					node[#node+1] = transform(w,w,nil,ln,nil,pos);
 				end
 			elseif w == '"' or w == "'" then
 				finish();
@@ -112,9 +113,9 @@ function Lib:Tokenize(str, transform)
 				local a, b, t = str:find("^([a-zA-Z_][a-zA-Z0-9_]*)", pos); -- ID
 				pos = b;
 				if keywords[t] then -- Keyword
-					node[#node+1] = transform("KEYWORD", nil, ln, nil, pos, t);
+					node[#node+1] = transform("KEYWORD", t, nil, ln, nil, pos);
 				else -- Identifier
-					node[#node+1] = transform("ID", nil, ln, nil, pos, t);
+					node[#node+1] = transform("ID", t, nil, ln, nil, pos);
 				end
 			elseif tl_numstrt[w] then
 				finish();
@@ -122,22 +123,22 @@ function Lib:Tokenize(str, transform)
 					local a,b,t = str:find("^(0x[0-9a-fA-F]+)", pos); -- hex number
 					if a then
 						pos = b;
-						node[#node+1] = transform("HEXNUM", nil, ln, nil, pos, t);
+						node[#node+1] = transform("HEXNUM", t, nil, ln, nil, pos);
 						break;
 					end
 					local a,b,t = str:find("^(%.%d+[eE]?-?[%d]*)", pos); -- number
 					if a then
 						pos = b;
-						node[#node+1] = transform("NUMBER", nil, ln, nil, pos, t);
+						node[#node+1] = transform("NUMBER", t, nil, ln, nil, pos);
 						break;
 					end
 					local a,b,t = str:find("^(%d+%.?%d*[eE]?-?[%d]*)", pos); -- number
 					if a then
 						pos = b;
-						node[#node+1] = transform("NUMBER", nil, ln, nil, pos, t);
+						node[#node+1] = transform("NUMBER", t, nil, ln, nil, pos);
 						break;
 					end
-					node[#node+1] = transform(w, nil, ln, nil, pos, w);
+					node[#node+1] = transform(w, w, nil, ln, nil, pos);
 					break;
 				end
 			else
@@ -173,7 +174,7 @@ function Lib:Tokenize(str, transform)
 			
 			pos = pos + 1;
 		end
-		node[#node+1] = transform("STRING", nil, ln, nil, pos,tconcat(stack),limiter)
+		node[#node+1] = transform("STRING",tconcat(stack),nil,ln,nil,pos,limiter)
 		stack = {};
 	end
 	function state3(limiter) -- block string/comment state
