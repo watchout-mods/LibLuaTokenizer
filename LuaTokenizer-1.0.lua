@@ -92,7 +92,7 @@ function Lib:Tokenize(str, transform)
 						node[#node+1] = transform("MLSTRING",nil,ln,nil,pos,tconcat(stack),t)
 						stack = {}
 					else
-						node[#node+1] = transform(w, nil, ln, nil, pos);
+						node[#node+1] = transform(w, nil, ln, nil, pos, w);
 					end
 				elseif w == "--" then
 					stack[#stack+1] = "--";
@@ -137,7 +137,7 @@ function Lib:Tokenize(str, transform)
 						node[#node+1] = transform("NUMBER", nil, ln, nil, pos, t);
 						break;
 					end
-					node[#node+1] = transform(w, nil, ln, nil, pos);
+					node[#node+1] = transform(w, nil, ln, nil, pos, w);
 					break;
 				end
 			else
