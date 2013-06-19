@@ -9,7 +9,7 @@ local str = {};
 for line in io.lines() do
 	str[#str+1] = line;
 end
-str = table.concat(str, "\r\n");
+str = table.concat(str, "\n");
 
 local function tflip(tbl)
 	r = {};
@@ -51,9 +51,9 @@ function tf_default(token, LS, LE, CS, CE, V, ...)
 	if token == "\t" then
 		return '    ';
 	elseif token == "NEWLINE" then
-		return "<span class=\"newline\">$</span>\n";
+		return ('<span class="newline">$</span><span class="linenum">%4s</span>\n'):format(LE);
 	elseif tokens[token] then
-		return ('<span class="%s">%s</span>'):format(token, V);
+		return ('<span class="%s" data-cs="%s" data-ce="%s">%s</span>'):format(token, CS or "", CE or "", V);
 	end
 	return V or token;
 end
@@ -193,4 +193,10 @@ end
 
 io.write(unpack(LuaTokenizer:Tokenize(str, transform)));
 
+local r, e = loadstring(str, "input")
+if e then 
+	local line, err = e:match("^%[string \"input\"%]:(%d+):(.*)$");
+	print("\n\n");
+	print(line, err);
+end
 
