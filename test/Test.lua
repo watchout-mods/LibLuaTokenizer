@@ -24,7 +24,7 @@ function foo(a, b, ...)
 end
 
 function Bar:foo()
-	return self;
+	return self, self[1], self["foo"];
 end
 
 ii = 7
