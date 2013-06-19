@@ -51,7 +51,7 @@
 					var $tt = $("#tooltip");
 					var $this = $(this);
 					var offset = $this.offset();
-					offset.top += 15;
+					offset.top += $this.height();
 					$tt.offset(offset)
 					$tt.show()
 					$tt.html("Token:"+$this.data("tt")+", CS:"+$this.data("cs")+", CE:"+$this.data("ce"))
