@@ -1,2 +1,4 @@
+package-as: LuaTokenizer-1.0
+
 ignore:
 	- test
