@@ -38,7 +38,7 @@ end
 	Multiline comment
 ]==]
 --
-local $$$ = "$$$", 1eZ;
+local $$ = "$$$", 1eZ;
 --[[ Multi-line comment ]]
 local some = "Unfinished string to the end of the line
 --[[ Multiline comment to the end of the file
