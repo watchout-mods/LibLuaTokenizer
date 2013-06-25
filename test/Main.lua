@@ -23,7 +23,7 @@ do
 		if t == "\t" then -- normalizes tabs
 			return '    ';
 		elseif t == "NEWLINE" then -- normalizes newlines
-			return "\n";
+			return V;
 		elseif token[t] then
 			return ('<span class="%s" data-cs="%s" data-ce="%s" data-tt="%s">%s</span>')
 				:format(token[t], CS or "", CE or "", t or "", V or t or "");
