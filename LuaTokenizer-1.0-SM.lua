@@ -56,93 +56,98 @@ end
 --------------------------------------------------------------------------------
 ---                          token operator helpers                          ---
 --------------------------------------------------------------------------------
-local function transit(N, states, a, b, c, d, ch, pos, ln)
-	local S = states[N] or error(("Invalid state '%s' in string %d:%d; stack: %s")
-		:format(tostring(N), ln or 0, pos or 0, tconcat(a)));
-	local s = S[ch] or S[ANY];
-	if s then
-		return s, a, pos, ln;
-	elseif S[F] then
-		return S[F](states,a,b,c,d,ch,pos,ln)
-	else
-		return states[ERROR], a, pos, ln --error(("Invalid state '%s'[%s]"):format(N, ch))
+local function push_char(token, newstate, more)
+	newstate = newstate or "START";
+	return function(states, stack, str, ret, cb, pos, ln)
+		local s = stack[1];
+		stack[2], stack[1] = nil, stack[2];
+--print(("PUSH CHAR\t%q\t%q LEN	%d	POS	%d"):format(token or s, s, #stack, pos))
+		ret[#ret+1] = cb(token or s, s, ln, ln, pos-#s, pos-1, more)
+		return states[newstate], stack, pos, ln;
 	end
 end
 local function push_token(token, newstate, more)
 	newstate = newstate or "START";
-	return function(states, stack, str, ret, cb, ch, pos, ln)
-		local s = tconcat(stack);
-		stack = {};
-print("PUSH", '"'..(token or s)..'"', '"'..s..'"')
+	return function(states, stack, str, ret, cb, pos, ln)
+		local s = tconcat(stack, "", 1, #stack-1);
+		stack = {stack[#stack]};
+--print(("PUSH TOKEN\t%q\t%q"):format(token or s, s))
 		ret[#ret+1] = cb(token or s, s, ln, ln, pos-#s, pos-1, more)
-		return transit(newstate, states, stack, str, ret, cb, ch, pos, ln);
+		return states[newstate], stack, pos, ln;
 	end
 end
 local function push_id(newstate)
 	newstate = newstate or "START";
-	return function(states, stack, str, ret, cb, ch, pos, ln)
-		local s, token = tconcat(stack), "ID";
-		stack = {};
+	return function(states, stack, str, ret, cb, pos, ln)
+		local s, token = tconcat(stack, "", 1, #stack-1), "ID";
+		stack = {stack[#stack]};
 		if keywords[s] then token = "KEYWORD" end
-print("PUSH", '"'..(token or s)..'"', '"'..s..'"')
+--print(("PUSH ID\t%q\t%q"):format(token or s, s))
 		ret[#ret+1] = cb(token or s, s, ln, ln, pos-#s, pos-1)
-		return transit(newstate, states, stack, str, ret, cb, ch, pos, ln);
+		return states[newstate], stack, pos, ln;
 	end
 end
 local function add_line(x)
 	if type(x) == "function" then
-		return function(a,b,c,d,e,f,g,l) return x(a,b,c,d,e,f,g,l+1) end
+		return function(a,b,c,d,e,f,l) return x(a,b,c,d,e,f,l+1) end
 	else
-		return function(a,b,c,d,e,f,g,l) return transit(x,a,b,c,d,e,f,g,l+1) end
+		x = x or "START";
+		return function(a,b,c,d,e,p,l) return states[x], b, p-1, l+1 end
 	end
 end
-local function consume_block(token)
-	return function(states, stack, str, ret, cb, ch, pos, ln)
-		local find = ("^(.-%%]%s%%])"):format(tconcat(stack, "", 2, #stack-1));
-		local pos1, pos2, tok = str:find(find, pos);
-print("CONSUME", find, pos1, pos2, tok)
+local function consume_block(token, newstate, stackpos)
+	newstate = newstate or "START";
+	return function(states, stack, str, ret, cb, pos, ln)
+		local open = tconcat(stack, "", stackpos or 2, #stack-2);
+		local find = ("^(.-%%]%s%%])(.)"):format(open);
+--print("CONSUME", find, pos, pos1, pos2, blk)
+		local pos1, pos2, blk, nxt = str:find(find, pos);
 		if pos1 then
-			pos = pos2;
-			stack[#stack+1] = tok
-			return push_token(token)(states, stack, str, ret, cb, ch, pos, ln);
+			stack[#stack] = blk; -- stack[#stack] => was first ch of block from statemachine
+			local s = tconcat(stack);
+			ret[#ret+1] = cb(token or s, s, ln, ln, pos-#open-2, pos2, more)
+			stack = {nxt};
+			return states[newstate], stack, pos2, ln;
 		else
-			return transit(ERROR, states, stack, str, ret, cb, ch, pos, ln);
+			return states[ERROR], stack, pos, ln;
 		end
 	end
 end
 
 states = {
-	[ERROR] = {[F] = push_token("ERROR")},
+	[ERROR] = {[F] = push_token("ERROR")}, -- Error trap
+	[ANY] = {[F] = push_token("ERROR")},
+	[F] = push_token("ERROR"),
 	[START] = {
-		[list("\11","\12","\n")] = {[F] = add_line(push_token("NEWLINE"))},
+		[list("\11","\12","\n")] = {[F] = add_line(push_char("NEWLINE"))},
 		["\r"] = {
 			["\n"] = {[F] = add_line(push_token("NEWLINE"))},
-			[F] = add_line(push_token("NEWLINE")),},
+			[F] = add_line(push_char("NEWLINE")),},
 		["'"] = "STRINGA",
 		['"'] = "STRINGB",
 		["["] = "BRACKET",
 		["."] = {
 			[range("0","9")] = "NUMBER2",
-			[F] = push_token(nil),},
+			[F] = push_char(nil),},
 		["0"] = { 
 			["x"] = "HEXNUM",
 			["."] = "NUMBER2",
 			[range("0","9")] = "NUMBER",
 			[list("e","E")] = "NUMBER3",
-			[F] = push_token("NUMBER")},
+			[F] = push_char("NUMBER")},
 		[range("1","9")] = "NUMBER",
 		[class_idstart()] = "ID", --{[F] = consume_while("^([a-zA-Z0-9_]*)", "ID")},
 		[list("<",">","=")] = {
-			[F] = push_token(nil),
+			[F] = push_char(nil),
 			["="] = {[F] = push_token(nil)}},
 		["~"] = {
 			["="] = {[F] = push_token(nil)},},
 		[list("^","/","*","+","%","#",",","]","(",")","{","}",":"," ","\t",";")]
-			= {[F] = push_token(nil)},
+			= {[F] = push_char(nil)},
 		["-"] = {
-			["-"] = {
-				[F] = push_token("COMMENT", "COMMENT")},
-			[F] = push_token(nil)}},
+			["-"] = "COMMENT", --{
+				--[F] = push_token("COMMENT", "COMMENT")},
+			[F] = push_char(nil)}},
 	STRINGA = {
 		["'"] = {[F] = push_token("STRING")},
 		["\\"] = {
@@ -192,7 +197,7 @@ states = {
 	COMMENT  = {
 		["["] = {
 			["="]="CRACKET",
-			["["]={[F]=consume_block("COMMENT")},
+			["["]={[F]=consume_block("COMMENT","START",4)},
 			[ANY] = "COMMENT2"},
 		[ANY] = "COMMENT2",},
 	COMMENT2 = {
@@ -202,7 +207,7 @@ states = {
 		},
 		[ANY] = "COMMENT2",
 	},
-	CRACKET  = {["["] = {[F]=consume_block("COMMENT"),},["="]="CRACKET",[F] = push_token(nil),},
+	CRACKET  = {["["] = {[F]=consume_block("COMMENT","START",4),},["="]="CRACKET",[ANY] = "COMMENT2",},
 }
 
 function Lib:Tokenize(str, cb)
@@ -211,22 +216,16 @@ function Lib:Tokenize(str, cb)
 	while pos <= len+1 do
 		local ch = str:sub(pos,pos);
 		local newst = st[ch] or st[ANY]; 
-		if not newst and st[F] then
-			newst, stack, pos, ln = st[F](states,stack,str,ret,cb,ch,pos,ln);
-		end
-		if not newst then
-			newst, stack, pos, ln = states[ERROR][F](states,stack,str,ret,cb,ch,pos,ln);
-		end
-		if not newst then
-			error(("Invalid new state '%s' for '%s' in string %d:%d; stack: %s"):format(
-				tostring(newst), ch, ln or 0, pos or 0, tconcat(stack)));
-		end
-		st = newst;
 		stack[#stack+1] = ch;
+		if not newst and st[F] then
+			newst, stack, pos, ln = st[F](states,stack,str,ret,cb,pos,ln);
+			newst = newst[ch] or newst[ANY] or states[ERROR]; 
+		end
+		st = newst or states[ERROR];
 		pos = pos + 1;
 	end
 	if #stack > 1 then
-		states[ERROR][F](str, ret, cb, ch);
+		states[ERROR][F](states,stack,str,ret,cb,pos,ln);
 	end
 	return ret;
 end
@@ -236,6 +235,7 @@ local function prepare_tree(states, state)
 	for k,v in pairs(state) do
 		local t = type(v);
 		if t == "table" then
+			setmetatable(v, {__tostring = function() return tostring(k) end})
 			prepare_tree(states, v);
 		elseif t == "string" then
 			state[k] = states[v];
@@ -252,7 +252,7 @@ end
 prepare_tree(states, states)
 
 -- print tree:
---[= ==[
+--[===[
 local ST = {};
 function printTree(t, indent, known, rec, ...)
 	if type(t) ~= "table" then error("Argument #1 must be a table") end
@@ -317,4 +317,3 @@ function printTree(t, indent, known, rec, ...)
 end
 printTree(states, "  ", {F, ANY, states, [F]=":F:", [ANY]=":ANY:", [states]="states"})
 --]===]
-printTree(debug.getinfo(range, "L"))
