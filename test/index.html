@@ -13,7 +13,6 @@
 						display: none;
 						font-family: Courier New;
 						background: rgba(220,220,220,.85);
-						box-shadow: 0 0 5px black;
 						border-radius: .5em;
 						padding: .2em .4em;}
 			.keyword  { color: #93C763;
@@ -32,7 +31,7 @@
 						left: -1em;
 						background: #555;
 						padding: 0 .2em; }
-			.hover    { background-color: rgba(255,255,255,.5); }
+			.hover    { background-color: rgba(255,255,255,.3); }
 		</style>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 		<script>
@@ -44,7 +43,7 @@
 					success: function(data) {
 						if ((data != lastdata)) {
 							lastdata = data
-							console.log("replacing")
+							//console.log("replacing")
 							$("#code").html(data)
 							attachHandlers()
 						}
