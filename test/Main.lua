@@ -1,4 +1,4 @@
-dofile("../LuaTokenizer-1.0-SM.lua");
+dofile("../LuaTokenizer-1.0.lua");
 local io = require("io");
 
 local str = {};
