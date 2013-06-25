@@ -141,35 +141,39 @@ states = {
 			[F] = push_char(nil),
 			["="] = {[F] = push_token(nil)}},
 		["~"] = {
+			[F] = push_token("ERROR"), -- if left out, next char would be in error token too
 			["="] = {[F] = push_token(nil)},},
 		[list("^","/","*","+","%","#",",","]","(",")","{","}",":"," ","\t",";")]
 			= {[F] = push_char(nil)},
 		["-"] = {
-			["-"] = "COMMENT", --{
-				--[F] = push_token("COMMENT", "COMMENT")},
+			["-"] = "COMMENT",
 			[F] = push_char(nil)}},
 	STRINGA = {
 		["'"] = {[F] = push_token("STRING")},
 		["\\"] = {
 			[ANY] = "STRINGA",
-			["\n"] = {
-				["\r"] = {[F] = add_line("STRINGA")},
+			["\n"] = {[F] = add_line("STRINGA")},
+			["\r"] = {
+				["\n"] = {[F] = add_line("STRINGA")},
 				[F] = add_line("STRINGA")}},
-		["\n"] = {
-			["\r"] = {[F] = push_token("ERROR")},
+		["\r"] = {
+			["\n"] = {[F] = push_token("ERROR")},
 			[F] = push_token("ERROR")},
+		["\n"] = {[F] = push_token("ERROR")},
 		[ANY] = "STRINGA",
 	},
 	STRINGB = {
 		['"'] = {[F] = push_token("STRING")},
 		["\\"] = {
 			[ANY] = "STRINGB",
-			["\n"] = {
-				["\r"] = {[F] = add_line("STRINGB")},
+			["\n"] = {[F] = add_line("STRINGB")},
+			["\r"] = {
+				["\n"] = {[F] = add_line("STRINGB")},
 				[F] = add_line("STRINGB")}},
-		["\n"] = {
-			["\r"] = {[F] = push_token("ERROR")},
+		["\r"] = {
+			["\n"] = {[F] = push_token("ERROR")},
 			[F] = push_token("ERROR")},
+		["\n"] = {[F] = push_token("ERROR")},
 		[ANY] = "STRINGB"},
 	NUMBER = {
 		[range("1","9")] = "NUMBER",
@@ -198,13 +202,21 @@ states = {
 		["["] = {
 			["="]="CRACKET",
 			["["]={[F]=consume_block("COMMENT","START",4)},
+			["\r"] = {
+				["\n"] = {[F] = push_token("COMMENT")},
+				[F] = push_token("COMMENT")},
+			["\n"] = {[F] = push_token("COMMENT")},
 			[ANY] = "COMMENT2"},
+		["\r"] = {
+			["\n"] = {[F] = push_token("COMMENT")},
+			[F] = push_token("COMMENT")},
+		["\n"] = {[F] = push_token("COMMENT")},
 		[ANY] = "COMMENT2",},
 	COMMENT2 = {
-		["\n"] = {
-			["\r"] = {[F] = push_token("COMMENT")},
-			[F] = push_token("COMMENT"),
-		},
+		["\r"] = {
+			["\n"] = {[F] = push_token("COMMENT")},
+			[F] = push_token("COMMENT")},
+		["\n"] = {[F] = push_token("COMMENT")},
 		[ANY] = "COMMENT2",
 	},
 	CRACKET  = {["["] = {[F]=consume_block("COMMENT","START",4),},["="]="CRACKET",[ANY] = "COMMENT2",},
