@@ -13,7 +13,7 @@ local a = 1;
 x.K = "Multi-line\
 string";
 
--- Comment
+--- Comment
 -- ]=]
 function foo(a, b, ...)
 	while true and x.y do
@@ -27,16 +27,19 @@ function Bar:foo()
 	return self, self[1], self["foo"];
 end
 
+-- [[ SINGLE line comment! ]]
 ii = ~7
+--[ comment [ containing brackets
 for ii=1,K.L do
 	foo(ii, ii);
 end
 
---[==[
+--[==[a
 	Multiline comment
 ]==]
-
-local $$$ = "$$$";
+--
+local $$$ = "$$$", 1eZ;
+--[[ Multi-line comment ]]
 local some = "Unfinished string to the end of the line
 --[[ Multiline comment to the end of the file
 function test() end
