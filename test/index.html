@@ -11,8 +11,9 @@
 						z-index: 1000;
 						top: 0; left: 0;
 						display: none;
-						background: #ccc;
-						border: 2px solid black;
+						font-family: Courier New;
+						background: rgba(220,220,220,.85);
+						box-shadow: 0 0 5px black;
 						border-radius: .5em;
 						padding: .2em .4em;}
 			.keyword  { color: #93C763;
@@ -31,6 +32,7 @@
 						left: -1em;
 						background: #555;
 						padding: 0 .2em; }
+			.hover    { background-color: rgba(255,255,255,.5); }
 		</style>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 		<script>
@@ -38,23 +40,34 @@
 			function foo() {
 				$.ajax({
 					url: "Test.php",
-					contentType: "text/text",
+					dataType: "text",
 					success: function(data) {
 						if ((data != lastdata)) {
-							lastdata = data;
-							$("#code").html(data);
+							lastdata = data
+							console.log("replacing")
+							$("#code").html(data)
+							attachHandlers()
 						}
-						setTimeout(foo, 500);
+						setTimeout(foo, 500)
 					},
 				})
+				
+			}
+			function attachHandlers() {
 				$("#code span").hover(function() {
-					var $tt = $("#tooltip");
-					var $this = $(this);
-					var offset = $this.offset();
-					offset.top += $this.height();
+					var $tt = $("#tooltip")
+					var $this = $(this)
+					var offset = $this.offset()
+					offset.top += $this.height()
+					$tt.empty()
+					$tt.html("Token: <b>"+$this.data("tt")+"</b>, CS: <b>"+
+						$this.data("cs")+"</b>, CE: <b>"+$this.data("ce")+"</b>");
+					$tt.show(300)
 					$tt.offset(offset)
-					$tt.show()
-					$tt.html("Token:"+$this.data("tt")+", CS:"+$this.data("cs")+", CE:"+$this.data("ce"))
+					$this.addClass("hover")
+				}, function() {
+					$("#tooltip").finish().hide()
+					$(this).removeClass("hover")
 				});
 			}
 			$(foo);
