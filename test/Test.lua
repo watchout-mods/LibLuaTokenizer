@@ -34,9 +34,9 @@ for ii=1,K.L do
 	foo(ii, ii);
 end
 
---[==[a
+--[===[
 	Multiline comment
-]==]
+--]===]
 --
 local $$ = "$$$", 1eZ;
 --[[ Multi-line comment ]]

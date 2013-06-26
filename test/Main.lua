@@ -1,11 +1,6 @@
 dofile("../LuaTokenizer-1.0.lua");
 local io = require("io");
-
-local str = {};
-for line in io.lines() do
-	str[#str+1] = line;
-end
-str = table.concat(str, "\n");
+local str = io.read("*a");
 
 local Highlighter = {}
 do
@@ -23,7 +18,9 @@ do
 		if t == "\t" then -- normalizes tabs
 			return '    ';
 		elseif t == "NEWLINE" then -- normalizes newlines
-			return V;
+			--return V; -- no EOL marker
+			return ('<span class="%s" data-cs="%s" data-ce="%s" data-tt="%s">&para;%s</span>')
+				:format(t,CS or "", CE or "", t or "", V);
 		elseif token[t] then
 			return ('<span class="%s" data-cs="%s" data-ce="%s" data-tt="%s">%s</span>')
 				:format(token[t], CS or "", CE or "", t or "", V or t or "");

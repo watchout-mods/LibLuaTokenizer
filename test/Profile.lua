@@ -1,5 +1,6 @@
 local d = os.clock;
 local io = require("io");
+local N = 100;
 
 local str = {};
 for line in io.lines() do
@@ -13,20 +14,25 @@ local t;
 
 t = d();
 dofile("../LuaTokenizer-1.0.lua");
-print("Loading time:", d()-t)
+print(("Load time: %.3f ms"):format((d()-t)*1000))
 t = d();
-for i=1, 100 do
+for i=1, N do
 	local x = LuaTokenizer:Tokenize(str, cb)
 end
-print("    Exec time:", d()-t)
-print("--------------------")
+t = d()-t;
+print(("    Exec time: %.3f s"):format(t))
+print(("    Avg /it:   %.3f ms"):format(t*1000/N, "ms"))
+print( "-----------------------")
 
 t = d();
 dofile("../LuaTokenizer-1.0-old.lua");
-print("Loading time of old version:", d()-t)
+print("Old version")
+print(("Load time: %.3f ms"):format((d()-t)*1000))
 t = d();
-for i=1, 100 do
+for i=1, N do
 	local x = LuaTokenizer:Tokenize(str, cb)
 end
-print("    Exec time:", d()-t)
-print("--------------------")
+t = d()-t;
+print(("    Exec time: %.3f s"):format(t))
+print(("    Avg /it:   %.3f ms"):format(t*1000/N, "ms"))
+print( "-----------------------")
