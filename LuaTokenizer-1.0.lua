@@ -52,6 +52,17 @@ local function list(...)
 		for i=1, #list do tbl[list[i]] = set; end
 	end
 end
+local function except(...)
+	local list = {...};
+	for i=1, #list do list[list[i]], list[i] = true, nil; end
+	return function(tbl, set)
+		local ch;
+		for i=1, 255 do 
+			ch = char(i);
+			if not list[ch] then tbl[ch] = set; end
+		end
+	end
+end
 
 --------------------------------------------------------------------------------
 ---                          token operator helpers                          ---
@@ -99,13 +110,13 @@ local function consume_block(token, newstate, stackpos)
 	newstate = newstate or "START";
 	return function(states, stack, str, ret, cb, pos, ln)
 		local open = tconcat(stack, "", stackpos or 2, #stack-2);
-		local find = ("^(.-%%]%s%%])(.)"):format(open);
---print("CONSUME", find, pos, pos1, pos2, blk)
+		local find = ("^(.-%%]%s%%])(.?)"):format(open);
 		local pos1, pos2, blk, nxt = str:find(find, pos);
+--print("CONSUME", find, pos, pos1, pos2, blk)
 		if pos1 then
 			stack[#stack] = blk; -- stack[#stack] => was first ch of block from statemachine
 			local s = tconcat(stack);
-			ret[#ret+1] = cb(token or s, s, ln, ln, pos-#open-2, pos2, more)
+			ret[#ret+1] = cb(token or s, s, ln, ln, pos-#open-2, pos2-1, more)
 			stack = {nxt};
 			return states[newstate], stack, pos2, ln;
 		else
@@ -202,23 +213,13 @@ states = {
 		["["] = {
 			["="]="CRACKET",
 			["["]={[F]=consume_block("COMMENT","START",4)},
-			["\r"] = {
-				["\n"] = {[F] = push_token("COMMENT")},
-				[F] = push_token("COMMENT")},
-			["\n"] = {[F] = push_token("COMMENT")},
-			[ANY] = "COMMENT2"},
-		["\r"] = {
-			["\n"] = {[F] = push_token("COMMENT")},
+			[except("\r","\n","=","[")] = "COMMENT2",
 			[F] = push_token("COMMENT")},
-		["\n"] = {[F] = push_token("COMMENT")},
-		[ANY] = "COMMENT2",},
+		[except("\r","\n","[")] = "COMMENT2",
+		[F] = push_token("COMMENT")},
 	COMMENT2 = {
-		["\r"] = {
-			["\n"] = {[F] = push_token("COMMENT")},
-			[F] = push_token("COMMENT")},
-		["\n"] = {[F] = push_token("COMMENT")},
-		[ANY] = "COMMENT2",
-	},
+		[except("\r","\n")] = "COMMENT2",
+		[F] = push_token("COMMENT")},
 	CRACKET  = {["["] = {[F]=consume_block("COMMENT","START",4),},["="]="CRACKET",[ANY] = "COMMENT2",},
 }
 
@@ -262,70 +263,3 @@ local function prepare_tree(states, state)
 	end
 end
 prepare_tree(states, states)
-
--- print tree:
---[===[
-local ST = {};
-function printTree(t, indent, known, rec, ...)
-	if type(t) ~= "table" then error("Argument #1 must be a table") end
-	if rec ~= nil and type(rec) ~= "number" then error("Argument #2 must be nil or a number") end
-	if known ~= nil and type(known) ~= "table" then error("Argument #3 must be nil or a table") end
-	
-	known = known or {t, [t] = 1};
-	rec = rec or 0;
-	indent = indent or "  ";
-	local indentc = indent:rep(rec);
-	local indentn = indent:rep(rec+1);
-	local msg = tostring(t);
-	if ... then msg = ("[%s]"):format(tostring(...):gsub("[\n]","\\n"):gsub("[\r]","\\r")); end
-	
-	local sorter = {};
-	for k,v in pairs(t) do sorter[#sorter+1] = k; end
-	table.sort(sorter, function(a, b)
-		local ta, tb = type(a), type(b);
-		-- returns true when the first is less than the second
-		if ta == tb then
-			return tostring(a) < tostring(b);
-		elseif ta == "boolean" then
-			return true;
-		elseif ta == "number" and tb == "string" then
-			return true;
-		elseif ta == "string" and tb == "number" then
-			return false;
-		elseif ta == "table" then
-			return true;
-		elseif tb == "table" then
-			return false;
-		end
-		return tostring(a) < tostring(b);
-	end);
-	
-	print(indentc..msg.." = {");
-	for a,k in ipairs(sorter) do
-		local _k = k
-		if type(_k) == "table" then
-			if not known[k] then known[#known+1] = k; known[k] = #known; end
-			_k = known[k]
-		elseif type(_k) == "function" then
-			if not known[k] then known[#known+1] = k; known[k] = #known; end
-			_k = "FNC#"..known[k]
-		elseif type(_k) == "string" then
-			_k = k:gsub("[\n\r]", "\\n");
-		else
-			_k = tostring(k);
-		end
-		if type(t[k]) == "table" and not known[t[k]] then
-			known[#known+1] = t[k];
-			known[t[k]] = (known[t] or "T")..".".._k or #known;
-			printTree(t[k], indent, known, rec+1, k);
-		elseif type(t[k]) == "table" then
-			print(("%s[%s] = recurse to #%s,"):format(indentn,_k,tostring(known[t[k]])));
-		else
-			print(("%s[%s] = %s,"):format(indentn,_k,tostring(t[k])));
-			--print(("  "):rep(rec+2).."["..tostring(k).."] = "..tostring(t[k])..",");
-		end
-	end
-	print(indentc.."},");
-end
-printTree(states, "  ", {F, ANY, states, [F]=":F:", [ANY]=":ANY:", [states]="states"})
---]===]
