@@ -1,4 +1,4 @@
-local x = "abc";
+local x = "abc||r|ra|cff001122|o";
 local y = "\"\'\1";
 local z = [=[ asdf ]==]
 ]=],[[xyz]],[[]];
@@ -27,9 +27,9 @@ function Bar:foo()
 	return self, self[1], self["foo"];
 end
 
--- [[ SINGLE line comment! ]]
+-- [[ SINGLE line comment!
 ii = ~7
---[ comment [ containing brackets
+--[ comment [ containing brackets ]]
 for ii=1,K.L do
 	foo(ii, ii);
 end
