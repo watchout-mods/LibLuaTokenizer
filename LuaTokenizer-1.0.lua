@@ -103,7 +103,7 @@ local function add_line(x)
 		return function(a,b,c,d,e,f,l) return x(a,b,c,d,e,f,l+1) end
 	else
 		x = x or "START";
-		return function(a,b,c,d,e,p,l) return states[x], b, p-1, l+1 end
+		return function(a,b,c,d,e,p,l) return states[x], b, p, l+1 end
 	end
 end
 local function consume_block(token, newstate, stackpos)
@@ -154,11 +154,15 @@ states = {
 		["~"] = {
 			[F] = push_token("ERROR"), -- if left out, next char would be in error token too
 			["="] = {[F] = push_token(nil)},},
-		[list("^","/","*","+","%","#",",","]","(",")","{","}",":"," ","\t",";")]
+		[list("^","/","*","+","%","#",",","]","(",")","{","}",":","\t",";")]
 			= {[F] = push_char(nil)},
+		[" "] = {[" "]="BLANK", [F]=push_char("WHITESPACE")},
 		["-"] = {
 			["-"] = "COMMENT",
 			[F] = push_char(nil)}},
+	BLANK = {
+		[" "] = "BLANK",
+		[F] = push_token("WHITESPACE")},
 	STRINGA = {
 		["'"] = {[F] = push_token("STRING")},
 		["\\"] = {
