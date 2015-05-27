@@ -143,7 +143,7 @@ states = {
 		["0"] = { 
 			["x"] = "HEXNUM",
 			["."] = "NUMBER2",
-			[range("0","9")] = "NUMBER",
+			[range("1","9")] = "NUMBER",
 			[list("e","E")] = "NUMBER3",
 			[F] = push_char("NUMBER")},
 		[range("1","9")] = "NUMBER",
@@ -191,13 +191,10 @@ states = {
 		["\n"] = {[F] = push_token("ERROR")},
 		[ANY] = "STRINGB"},
 	NUMBER = {
-		[range("1","9")] = "NUMBER",
+		[range("1","9")] = "NUMBER2",
 		["."] = "NUMBER2",
+		["x"] = "HEXNUM",
 		[list("e","E")] = "NUMBER3",
-		["0"] = { 
-			["x"] = "HEXNUM",
-			[range("0","9")] = "NUMBER",
-			["."] = "NUMBER2"},
 		[F] = push_token("NUMBER")},
 	NUMBER2 = {[range("0","9")] = "NUMBER2", [list("e","E")] = "NUMBER3", [F] = push_token("NUMBER")},
 	NUMBER3 = {[range("0","9")] = "NUMBER5", ["-"] = "NUMBER4"},
@@ -231,8 +228,8 @@ function Lib:Tokenize(str, cb)
 	local st, ret, len, cb = states[START], {}, #str, cb or default_transform;
 	local stack, pos, ln = {}, 1, 1;
 	while pos <= len+1 do
-		local ch = str:sub(pos,pos);
-		local newst = st[ch] or st[ANY]; 
+		local ch = str:sub(pos,pos);      -- get next character. No way around this.
+		local newst = st[ch] or st[ANY];  -- try transition to new state using ch
 		stack[#stack+1] = ch;
 		if not newst and st[F] then
 			newst, stack, pos, ln = st[F](states,stack,str,ret,cb,pos,ln);
@@ -247,6 +244,8 @@ function Lib:Tokenize(str, cb)
 	return ret;
 end
 
+---
+-- Prepares a parse tree.
 local function prepare_tree(states, state)
 	local queue = {};
 	for k,v in pairs(state) do
@@ -263,7 +262,8 @@ local function prepare_tree(states, state)
 	end
 	for i=1, #queue do
 		local k = queue[i]
-		state[k] = nil, k(state, state[k]);
+		state[k] = nil, k(state, state[k]); -- Wow, this was evil of me. Note state[k] is
+		                                    -- only nil'd after assignment
 	end
 end
 prepare_tree(states, states)
