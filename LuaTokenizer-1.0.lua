@@ -31,21 +31,6 @@ local function range(start, stop)
 		for i=byte(start), byte(stop) do tbl[char(i)] = set; end
 	end
 end
-local function class_idstart()
-	return function(tbl, set)
-		for i=byte("a"), byte("z") do tbl[char(i)] = set; end
-		for i=byte("A"), byte("Z") do tbl[char(i)] = set; end
-		tbl["_"] = set;
-	end
-end
-local function class_id()
-	return function(tbl, set)
-		for i=byte("a"), byte("z") do tbl[char(i)] = set; end
-		for i=byte("A"), byte("Z") do tbl[char(i)] = set; end
-		for i=byte("0"), byte("9") do tbl[char(i)] = set; end
-		tbl["_"] = set;
-	end
-end
 local function list(...)
 	local list = {...};
 	return function(tbl, set)
@@ -61,6 +46,21 @@ local function except(...)
 			ch = char(i);
 			if not list[ch] then tbl[ch] = set; end
 		end
+	end
+end
+local function class_idstart()
+	return function(tbl, set)
+		for i=byte("a"), byte("z") do tbl[char(i)] = set; end
+		for i=byte("A"), byte("Z") do tbl[char(i)] = set; end
+		tbl["_"] = set;
+	end
+end
+local function class_id()
+	return function(tbl, set)
+		for i=byte("a"), byte("z") do tbl[char(i)] = set; end
+		for i=byte("A"), byte("Z") do tbl[char(i)] = set; end
+		for i=byte("0"), byte("9") do tbl[char(i)] = set; end
+		tbl["_"] = set;
 	end
 end
 
