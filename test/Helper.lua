@@ -2,6 +2,7 @@ function log(tpl, ...)
 	print(tpl:format(...));
 end
 
+local AssertionFailure = {}; -- Special constant
 local TestCase = nil;
 local TestCasePrototype = {
 	__index = {
@@ -27,7 +28,7 @@ local TestCasePrototype = {
 			end
 		end,
 		isDebug = function( ... )
-			return false;
+			return true;
 		end
 	}
 }
@@ -45,6 +46,7 @@ local function assert_(expect, message, ...)
 				log("Assertion failed", ...);
 			end
 		end
+		error(AssertionFailure);
 	end
 end
 
@@ -52,20 +54,21 @@ function assertEquals(expect, arg, message, ...)
 	assert_(expect == arg, "Expected %s, but got %s", expect, arg);
 end
 
-function assertArrayEquals(expect, arg, message, ...)
+function assertArrayEquals(expect, actual, message, ...)
 	if message then
 		assert_(type(expect) == "table", message, ...);
-		assert_(type(arg) == "table", message, ...);
-		assert_(#expect == #arg, message, ...);
+		assert_(type(actual) == "table", message, ...);
+		assert_(#expect == #actual, message, ...);
 		for k, v in pairs(expect) do
-			assert_(v == arg[k], message, ...);
+			assert_(v == actual[k], message, ...);
 		end
 	else
-		assert_(type(expect) == "table", "Need to expect a table, but got", type(expect));
-		assert_(type(arg) == "table", "Expected a table, but got", type(arg));
-		assert_(#expect == #arg, "Arrays are of unequal length (expected %s ~= %s)", #expect, #arg);
+		assert_(type(expect) == "table", "Need to expect a table, but got `%s`", type(expect));
+		assert_(type(actual) == "table", "Expected a table, but got `%s`", type(actual));
+		assert_(#expect == #actual, "Arrays are of unequal length (expected %s ~= %s)", #expect, #actual);
 		for k, v in pairs(expect) do
-			assert_(v == arg[k], "Array value different (expected %s ~= %s)", v, arg[k]);
+			assert_(type(v) == type(actual[k]), "Array value type different (expected %s ~= %s)", type(v), type(actual[k]));
+			assert_(v == actual[k], "Array value different (expected %s ~= %s)", v, actual[k]);
 		end
 	end
 end
@@ -76,14 +79,14 @@ end
 
 local function prepareTestEnvironment(test, ... )
 	log("--------------------------------------------------------------------------------")
-	log("Running test '%s'", test);
+	log("Running test suite '%s'", test);
 	TestCase = setmetatable({}, TestCasePrototype);
 end
 
 function test(description, fn, ...)
 	TestCase:addExecution();
 	local res, err = pcall(fn, ...);
-	if not res then
+	if not res and err ~= AssertionFailure then
 		TestCase:addError(err);
 		print(("Error: %s"):format(err));
 	end
@@ -94,7 +97,7 @@ local function finishTests()
 	log("--------------------------------------------------------------------------------")
 	log("Tests finished:");
 	log("%s tests run, %s failed, %s errors", t or 0, f or 0, e or 0);
-	log("\n\n");
+	log("");
 end
 
 do
