@@ -15,6 +15,13 @@ local keywords = {["and"]="and",["break"]="break",["do"]="do",["local"]="local",
 	["then"]="then",["else"]="else",["for"]="for",["nil"]="nil",["true"]="true",
 	["not"]="not",["until"]="until",["while"]="while"};
 
+---
+-- @param token the current token (or char)
+-- @param V     the current item (value/char/token)
+-- @param LS    the start line of the current item
+-- @param LE    the end line of the current item
+-- @param CS    the start of the current item
+-- @param CE    the end of the current item
 local function default_transform(...) -- token, V, LS, LE, CS, CE, ... = ...
 	return {...};
 end
@@ -224,6 +231,9 @@ states = {
 	CRACKET  = {["["] = {[F]=consume_block("COMMENT","START",4),},["="]="CRACKET",[ANY] = "COMMENT2",},
 }
 
+---
+-- @param str the string to tokenize
+-- @param cb  a callback that is called when an error is encountered
 function Lib:Tokenize(str, cb)
 	local st, ret, len, cb = states[START], {}, #str, cb or default_transform;
 	local stack, pos, ln = {}, 1, 1;
