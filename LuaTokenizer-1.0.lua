@@ -1,4 +1,4 @@
-local NAME, MAJOR, MINOR = "LuaTokenizer", "LuaTokenizer-1.0", 2
+local NAME, MAJOR, MINOR = "LuaTokenizer", "LuaTokenizer-1.0", 3
 local Lib = {};
 if LibStub then
 	Lib = LibStub:NewLibrary(MAJOR, MINOR);
@@ -267,3 +267,5 @@ local function prepare_tree(states, state)
 	end
 end
 prepare_tree(states, states)
+
+return Lib;
