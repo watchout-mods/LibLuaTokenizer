@@ -5,4 +5,4 @@ all: test
 test:
 	${LUA} test/Helper.lua test/Test*.lua
 
-.PHONY: test
+.PHONY: all test
