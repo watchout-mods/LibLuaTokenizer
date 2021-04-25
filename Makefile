@@ -1,8 +1,11 @@
-LUA=lua
+LUA=lua5.1
 
 all: test
 
-test:
-	${LUA} test/Helper.lua test/Test*.lua
+install-dependencies:
+	sudo luarocks install busted
 
-.PHONY: all test
+test:
+	busted
+
+.PHONY: all test install-dependencies
