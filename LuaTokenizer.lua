@@ -80,7 +80,7 @@ local function push_char(token, newstate, more)
 		local s = stack[1];
 		-- stack[2], stack[1] = nil, stack[2];
 --print(("PUSH CHAR\t%q\t%q LEN	%d	POS	%d"):format(token or s, s, #stack, pos))
-		ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #s, pos - 1, more)
+		ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #s, pos - 1, more);
 		return states[newstate], {}, pos, ln;
 	end
 end
@@ -88,10 +88,9 @@ end
 local function push_token(token, newstate, more)
 	newstate = newstate or "START";
 	return function(states, stack, str, ret, cb, pos, ln)
-		-- local s = tconcat(stack, "", 1, #stack - 1);
 		local s = tconcat(stack, "", 1, #stack - 1);
 --print(("PUSH TOKEN\t%q\t%q"):format(token or s, s))
-		ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #s, pos - 1, more)
+		ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #s, pos - 1, more);
 		return states[newstate], {}, pos, ln;
 	end
 end
@@ -102,7 +101,7 @@ local function push_id(newstate)
 		local s = tconcat(stack, "", 1, #stack - 1);
 		local token = keywords[s] and "KEYWORD" or "ID";
 --print(("PUSH ID\t%q\t%q"):format(token or s, s))
-		ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #s, pos - 1)
+		ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #s, pos - 1);
 		return states[newstate], {}, pos, ln;
 	end
 end
