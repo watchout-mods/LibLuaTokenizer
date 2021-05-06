@@ -6,6 +6,9 @@ install-dependencies:
 	sudo luarocks install busted
 
 test:
-	busted
+	busted --exclude-tags=ignore
 
-.PHONY: all test install-dependencies
+test-only:
+	busted -t only
+
+.PHONY: all test test-only install-dependencies
