@@ -2,6 +2,13 @@ describe("Tokenizer", function()
 	local tok = require("LuaTokenizer")
 	local cb = require("spec/Callbacks");
 
+	it("parses a simple single-quoted string", function()
+		local str = [['asdf']];
+		local expect = {{"STRING", "'asdf'"}};
+		local actual =  tok:Tokenize(str, cb.tokenchar);
+		assert.are.same(expect, actual);
+	end)
+
 	it("parses a simple string", function()
 		local str = [[x="asdf"]];
 		local expect = {"ID", "=", "STRING"};

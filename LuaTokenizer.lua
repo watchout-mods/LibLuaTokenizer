@@ -1,4 +1,4 @@
-local NAME, MAJOR, MINOR = "LuaTokenizer", "LuaTokenizer-1.0", 3
+local NAME, MAJOR, MINOR = "LuaTokenizer", "LuaTokenizer-1.0", 4
 local Lib = {};
 if LibStub then
 	Lib = LibStub:NewLibrary(MAJOR, MINOR);
@@ -9,11 +9,11 @@ end
 
 local tconcat, pairs, sub, char, byte
     = table.concat, pairs, string.sub, string.char, string.byte;
-local keywords = {["and"]="and",["break"]="break",["do"]="do",["local"]="local",
-	["elseif"]="elseif",["end"]="end",["false"]="false",["in"]="in",["if"]="if",
-	["function"]="function",["return"]="return",["repeat"]="repeat",["or"]="or",
-	["then"]="then",["else"]="else",["for"]="for",["nil"]="nil",["true"]="true",
-	["not"]="not",["until"]="until",["while"]="while"};
+local keywords = { ["and"] = "and", ["break"] = "break", ["do"] = "do", ["else"] = "else",
+	["elseif"] = "elseif", ["end"] = "end", ["false"] = "false", ["for"] = "for",
+	["function"] = "function", ["if"] = "if", ["in"] = "in", ["local"] = "local", ["nil"] = "nil",
+	["not"] = "not", ["or"] = "or", ["repeat"] = "repeat", ["return"] = "return", ["then"] = "then",
+	["true"] = "true", ["until"] = "until", ["while"] = "while" };
 
 ---
 -- @param token the current token (or char)
@@ -27,8 +27,11 @@ local function default_transform(...) -- token, V, LS, LE, CS, CE, ... = ...
 end
 
 local states = nil;
-local START, ERROR, ANY, F = "START", "ERROR", {}, {} -- special keys
+local START, ERROR, ANY, F, G = "START", "ERROR", {}, {}, {}; -- special keys
+local FNC = {[F] = F, [G] = G};
+Lib.Special = { ERROR = ERROR, START = START, ANY = ANY };
 Lib.START, Lib.ERROR, Lib.ANY, Lib.FNC = START, ERROR, ANY, F;
+
 
 --------------------------------------------------------------------------------
 ---                    character- class and range helpers                    ---
@@ -119,15 +122,15 @@ local function consume_block(token, newstate, stackpos)
 	newstate = newstate or "START";
 	stackpos = stackpos or 2;
 	return function(states, stack, str, ret, cb, pos, ln)
-		local open = stackpos == 0 and "" or tconcat(stack, "", stackpos, #stack - 2);
-		local find = "^(.-%]" .. open .. "%])(.?)";
-		local pos1, pos2, blk, nxt = str:find(find, pos);
---print("CONSUME", find, pos, pos1, pos2, blk)
+		local open = stackpos == 0 and "" or tconcat(stack, "", stackpos, #stack - 1);
+		local find = "^(.-%]" .. open .. "%])";
+		local pos1, pos2, blk = str:find(find, pos);
+		-- print(("CONSUME find %q; pos %q; pos1 %s; pos2 %s; blk %q"):format(find, pos, tostring(pos1), tostring(pos2), blk or ""));
 		if pos1 then
 			stack[#stack] = blk; -- stack[#stack] => was first ch of block from statemachine
 			local s = tconcat(stack);
-			ret[#ret + 1] = cb(token or s, s, ln, ln, pos - #open - 2, pos2 - 1, more);
-			return states[newstate], {}, pos2, ln;
+			ret[#ret + 1] = cb(token or s, s, ln, ln, pos1, pos2);
+			return states[newstate], {}, pos2 + 1, ln;
 		else
 			return states[ERROR], stack, pos, ln;
 		end
@@ -142,13 +145,11 @@ states = {
 		[list("\11","\12","\n")] = {[F] = add_line(push_char("NEWLINE"))},
 		["\r"] = {
 			["\n"] = {[F] = add_line(push_token("NEWLINE"))},
-			[F] = add_line(push_char("NEWLINE")),},
+			[F] = add_line(push_char("NEWLINE"))},
 		["'"] = "STRINGA",
 		['"'] = "STRINGB",
 		["["] = "BRACKET",
-		["."] = {
-			[range("0","9")] = "NUMBER2",
-			[F] = push_char(nil),},
+		["."] = {[range("0","9")] = "NUMBER2", [F] = push_char()},
 		["0"] = { 
 			["x"] = "HEXNUM",
 			["."] = "NUMBER2",
@@ -158,19 +159,18 @@ states = {
 		[range("1","9")] = "NUMBER",
 		[class_idstart()] = "ID", --{[F] = consume_while("^([a-zA-Z0-9_]*)", "ID")},
 		[list("<",">","=")] = {
-			[F] = push_char(nil),
-			["="] = {[F] = push_token(nil)}},
+			[F] = push_char(),
+			["="] = {[F] = push_token()}},
 		["~"] = {
 			[F] = push_token("ERROR"), -- if left out, next char would be in error token too
-			["="] = {[F] = push_token(nil)},},
-		[list("^","/","*","+","%","#",",","]","(",")","{","}",":",";")] = {
-			[F] = push_char(nil)},
+			["="] = {[F] = push_token()},},
+		[list("^","/","*","+","%","#",",","]","(",")","{","}",":",";")] = {[F] = push_char()},
 		[list(" ", "\t")] = {
 			[list(" ", "\t")] = "BLANK",
 			[F] = push_char("WHITESPACE")},
 		["-"] = {
 			["-"] = "COMMENT",
-			[F] = push_char(nil)}},
+			[F] = push_char()}},
 	BLANK = {
 		[list(" ", "\t")] = "BLANK",
 		[F] = push_token("WHITESPACE")},
@@ -186,8 +186,7 @@ states = {
 			["\n"] = {[F] = push_token("ERROR")},
 			[F] = push_token("ERROR")},
 		["\n"] = {[F] = push_token("ERROR")},
-		[ANY] = "STRINGA",
-	},
+		[ANY] = "STRINGA"},
 	STRINGB = {
 		['"'] = {[F] = push_token("STRING")},
 		["\\"] = {
@@ -204,7 +203,7 @@ states = {
 	NUMBER = {
 		[range("1", "9")] = "NUMBER2",
 		["."] = "NUMBER2",
-		["x"] = "HEXNUM",
+		[list("x", "X")] = "HEXNUM",
 		[list("e", "E")] = "NUMBER3",
 		[F] = push_token("NUMBER")},
 	NUMBER2 = {[range("0", "9")] = "NUMBER2", [list("e", "E")] = "NUMBER3", [F] = push_token("NUMBER")},
@@ -216,26 +215,35 @@ states = {
 		[range("a", "f")] = "HEXNUM",
 		[range("A", "F")] = "HEXNUM",
 		[F] = push_token("HEXNUM")},
-	ID = {
-		[class_id()] = "ID",
-		[F] = push_id()},
+	ID = {[class_id()] = "ID", [F] = push_id()},
 	BRACKET = {
-		["["] = {[F] = consume_block("STRING", "START", 0)},
-		["="] = "BRACKET2",
-		[F] = push_token(nil) --[[Normal brackets - for table index]]},
-	BRACKET2 = {["["] = {[F] = consume_block("STRING")}, ["="] = "BRACKET2"},
+		[F] = push_token() --[[Normal brackets - for table index]],
+		[G] = consume_block("STRING", nil, 0),
+		["["] = G,
+		["="] = "BRACKET2"},
+	BRACKET2 = {
+		[G] = consume_block("STRING", nil, 2),
+		["["] = G,
+		["="] = "BRACKET2"},
 	COMMENT = {
+		[F] = push_token("COMMENT"),
 		["["] = {
+			[F] = push_token("COMMENT"),
+			[G] = consume_block("COMMENT", nil, 0),
 			["="] = "CRACKET",
-			["["] = {[F] = consume_block("COMMENT", "START", 4)},
-			[except("\r", "\n", "=", "[")] = "COMMENT2",
-			[F] = push_token("COMMENT")},
-		[except("\r", "\n", "[")] = "COMMENT2",
-		[F] = push_token("COMMENT")},
+			["["] = G,
+			[list("\r", "\n", "")] = F,
+			[ANY] = "COMMENT"},
+		[list("\r", "\n", "")] = F,
+		[ANY] = "COMMENT2"},
 	COMMENT2 = {
 		[except("\r", "\n")] = "COMMENT2",
 		[F] = push_token("COMMENT")},
-	CRACKET  = {["["] = {[F] = consume_block("COMMENT", "START", 4)}, ["="] = "CRACKET", [ANY] = "COMMENT2"},
+	CRACKET  = {
+		[G] = consume_block("COMMENT", nil, 0),
+		["["] = G,
+		["="] = "CRACKET",
+		[ANY] = "COMMENT2"},
 }
 
 ---
@@ -248,13 +256,16 @@ function Lib:Tokenize(str, cb)
 		local ch = str:sub(pos, pos);     -- get next character. No way around this.
 		local newst = st[ch] or st[ANY];  -- try transition to new state using ch
 		stack[#stack + 1] = ch;
-		if not newst and st[F] then
+		-- print(("A ch %q; pos %s; st[ch] %q; len+1 %q"):format(ch, pos, tostring(st[ch] and true), len + 1));
+		if newst == nil and st[F] then
 			newst, stack, pos, ln = st[F](states, stack, str, ret, cb, pos, ln);
-			-- next state, new pos, new line number
-			--newst = newst[ch] or newst[ANY] or states[ERROR];
+		elseif newst and FNC[newst] then
+			-- new state, stack, new pos, new line number
+			newst, stack, pos, ln = st[newst](states, stack, str, ret, cb, pos, ln);
 		else
 			pos = pos + 1;
 		end
+		-- print(("B ch %q; pos %s; st[ch] %q; len+1 %q"):format(ch, pos, tostring(st[ch] and true), len + 1));
 		st = newst or states[ERROR];
 	end
 	if #stack > 1 then
@@ -265,21 +276,28 @@ end
 
 ---
 -- Prepares a parse tree.
+-- 
+-- If the value is a string, it will be replaced by the top-level value where the index is that
+-- string. If the key is a function, this will run the function with the sub-table and key as
+-- arguments.
 local function prepare_tree(states, state)
-	local queue = {};
-	for k,v in pairs(state) do
+	local queue, queuelen = {}, 0;
+	for k, v in pairs(state) do
 		local t = type(v);
-		if t == "table" then
+		if FNC[v] then
+			-- nop
+		elseif t == "table" then
 			setmetatable(v, {__tostring = function() return tostring(k) end})
 			prepare_tree(states, v);
 		elseif t == "string" then
 			state[k] = states[v];
 		end
 		if type(k) == "function" then
-			queue[#queue+1] = k;
+			queuelen = queuelen + 1;
+			queue[queuelen] = k;
 		end
 	end
-	for i=1, #queue do
+	for i=1, queuelen do
 		local k = queue[i]
 		state[k] = nil, k(state, state[k]); -- state[k] is only nil'd after assignment
 	end

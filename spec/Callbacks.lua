@@ -1,18 +1,18 @@
-local module = {};
+local callbacks = {};
 
-function module.onlytoken(token, ...)
+function callbacks.onlytoken(token, ...)
 	return token;
 end
 
-function module.onlychar(token, char, ...)
+function callbacks.onlychar(token, char, ...)
 	return char;
 end
 
-function module.tokenchar(token, char, ...)
+function callbacks.tokenchar(token, char, ...)
 	return {token, char};
 end
 
-function module.pretty(str)
+function callbacks.pretty(str)
 	return function(token, char, ln1, ln2, pos1, pos2, ...)
 		if token ~= char and token ~= "NEWLINE" then
 			return ("%s [%s] {%s}"):format(token, char, str:sub(pos1, pos2));
@@ -22,4 +22,4 @@ function module.pretty(str)
 	end
 end
 
-return module;
+return callbacks;
