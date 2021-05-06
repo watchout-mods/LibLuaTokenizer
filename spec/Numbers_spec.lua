@@ -27,15 +27,15 @@ describe("Tokenizer", function( ... )
 	it("parses decimal numbers", function( ... )
 		local expect = {"NUMBER"};
 		assert.are.same(expect, tok:Tokenize([[1.2345678901234567890]], cb.onlytoken));
-		assert.are.same(expect, tok:Tokenize([[1.234E567890]], cb.onlytoken));
-		assert.are.same(expect, tok:Tokenize([[1.234e567890]], cb.onlytoken));
+		assert.are.same(expect, tok:Tokenize([[12.345678901234567890]], cb.onlytoken));
+		assert.are.same(expect, tok:Tokenize([[123.45678901234567890]], cb.onlytoken));
 		assert.are.same(expect, tok:Tokenize([[0.1]], cb.onlytoken));
 		assert.are.same(expect, tok:Tokenize([[.1]], cb.onlytoken));
 
 		local expect = {"-", "NUMBER"};
 		assert.are.same(expect, tok:Tokenize([[-1.2345678901234567890]], cb.onlytoken));
-		assert.are.same(expect, tok:Tokenize([[-1.234E567890]], cb.onlytoken));
-		assert.are.same(expect, tok:Tokenize([[-1.234e567890]], cb.onlytoken));
+		assert.are.same(expect, tok:Tokenize([[-12.345678901234567890]], cb.onlytoken));
+		assert.are.same(expect, tok:Tokenize([[-123.45678901234567890]], cb.onlytoken));
 		assert.are.same(expect, tok:Tokenize([[-0.1]], cb.onlytoken));
 		assert.are.same(expect, tok:Tokenize([[-.1]], cb.onlytoken));
 	end)
