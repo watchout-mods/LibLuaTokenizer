@@ -216,7 +216,7 @@ states = {
 		[range("0", "9")] = "NUM_HEX",
 		[range("a", "f")] = "NUM_HEX",
 		[range("A", "F")] = "NUM_HEX",
-		[F] = push_token("NUM_HEX")},
+		[F] = push_token("HEXNUM")},
 	ID = {[class_id()] = "ID", [F] = push_id()},
 	BRACKET = {
 		[F] = push_token() --[[Normal brackets - for table index]],
