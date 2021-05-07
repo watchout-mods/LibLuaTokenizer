@@ -77,7 +77,7 @@ end
 --------------------------------------------------------------------------------
 ---                          token operator helpers                          ---
 --------------------------------------------------------------------------------
-local function push_char(token, newstate, more)
+local function add_char(token, newstate, more)
 	newstate = newstate or "START";
 	return function(states, stack, str, ret, cb, pos, ln)
 		local s = stack[1];
@@ -88,7 +88,7 @@ local function push_char(token, newstate, more)
 	end
 end
 
-local function push_token(token, newstate, more)
+local function add_token(token, newstate, more)
 	newstate = newstate or "START";
 	return function(states, stack, str, ret, cb, pos, ln)
 		local s = tconcat(stack, "", 1, #stack - 1);
@@ -98,7 +98,7 @@ local function push_token(token, newstate, more)
 	end
 end
 
-local function push_id(newstate)
+local function add_id(newstate)
 	newstate = newstate or "START";
 	return function(states, stack, str, ret, cb, pos, ln)
 		local s = tconcat(stack, "", 1, #stack - 1);
@@ -118,7 +118,7 @@ local function add_line(x)
 	end
 end
 
-local function consume_block(token, newstate, stackpos)
+local function add_block(token, stackpos, newstate)
 	newstate = newstate or "START";
 	stackpos = stackpos or 2;
 	return function(states, stack, str, ret, cb, pos, ln)
@@ -138,44 +138,44 @@ local function consume_block(token, newstate, stackpos)
 end
 
 states = {
-	[ERROR] = {[F] = push_token("ERROR")}, -- Error trap
-	[ANY] = {[F] = push_token("ERROR")},
-	[F] = push_token("ERROR"),
+	[ERROR] = {[F] = add_token("ERROR")}, -- Error trap
+	[ANY] = {[F] = add_token("ERROR")},
+	[F] = add_token("ERROR"),
 	[START] = {
-		[list("\11","\12","\n")] = {[F] = add_line(push_char("NEWLINE"))},
+		[list("\11","\12","\n")] = {[F] = add_line(add_char("NEWLINE"))},
 		["\r"] = {
-			["\n"] = {[F] = add_line(push_token("NEWLINE"))},
-			[F] = add_line(push_char("NEWLINE"))},
+			["\n"] = {[F] = add_line(add_token("NEWLINE"))},
+			[F] = add_line(add_char("NEWLINE"))},
 		["'"] = "STRINGA",
 		['"'] = "STRINGB",
 		["["] = "BRACKET",
-		["."] = {[range("0","9")] = "NUM_DEC", [F] = push_char()},
+		["."] = {[range("0","9")] = "NUM_DEC", [F] = add_char()},
 		["0"] = { 
 			["x"] = "NUM_HEX",
 			["."] = "NUM_DEC",
 			[range("1","9")] = "NUMBER",
 			[list("e","E")] = "NUM_EXP",
-			[F] = push_char("NUMBER")},
+			[F] = add_char("NUMBER")},
 		[range("1","9")] = "NUMBER",
 		[class_idstart()] = "ID", --{[F] = consume_while("^([a-zA-Z0-9_]*)", "ID")},
 		[list("<",">","=")] = {
-			[F] = push_char(),
-			["="] = {[F] = push_token()}},
+			[F] = add_char(),
+			["="] = {[F] = add_token()}},
 		["~"] = {
-			[F] = push_token("ERROR"), -- if left out, next char would be in error token too
-			["="] = {[F] = push_token()},},
-		[list("^","/","*","+","%","#",",","]","(",")","{","}",":",";")] = {[F] = push_char()},
+			[F] = add_token("ERROR"), -- if left out, next char would be in error token too
+			["="] = {[F] = add_token()},},
+		[list("^","/","*","+","%","#",",","]","(",")","{","}",":",";")] = {[F] = add_char()},
 		[list(" ", "\t")] = {
 			[list(" ", "\t")] = "BLANK",
-			[F] = push_char("WHITESPACE")},
+			[F] = add_char("WHITESPACE")},
 		["-"] = {
 			["-"] = "COMMENT",
-			[F] = push_char()}},
+			[F] = add_char()}},
 	BLANK = {
 		[list(" ", "\t")] = "BLANK",
-		[F] = push_token("WHITESPACE")},
+		[F] = add_token("WHITESPACE")},
 	STRINGA = {
-		["'"] = {[F] = push_token("STRING")},
+		["'"] = {[F] = add_token("STRING")},
 		["\\"] = {
 			[ANY] = "STRINGA",
 			["\n"] = {[F] = add_line("STRINGA")},
@@ -183,12 +183,12 @@ states = {
 				["\n"] = {[F] = add_line("STRINGA")},
 				[F] = add_line("STRINGA")}},
 		["\r"] = {
-			["\n"] = {[F] = push_token("ERROR")},
-			[F] = push_token("ERROR")},
-		["\n"] = {[F] = push_token("ERROR")},
+			["\n"] = {[F] = add_token("ERROR")},
+			[F] = add_token("ERROR")},
+		["\n"] = {[F] = add_token("ERROR")},
 		[ANY] = "STRINGA"},
 	STRINGB = {
-		['"'] = {[F] = push_token("STRING")},
+		['"'] = {[F] = add_token("STRING")},
 		["\\"] = {
 			[ANY] = "STRINGB",
 			["\n"] = {[F] = add_line("STRINGB")},
@@ -196,42 +196,42 @@ states = {
 				["\n"] = {[F] = add_line("STRINGB")},
 				[F] = add_line("STRINGB")}},
 		["\r"] = {
-			["\n"] = {[F] = push_token("ERROR")},
-			[F] = push_token("ERROR")},
-		["\n"] = {[F] = push_token("ERROR")},
+			["\n"] = {[F] = add_token("ERROR")},
+			[F] = add_token("ERROR")},
+		["\n"] = {[F] = add_token("ERROR")},
 		[ANY] = "STRINGB"},
 	NUMBER = {
 		[range("0", "9")] = "NUMBER",
 		["."] = "NUM_DEC",
 		[list("e", "E")] = "NUM_EXP",
-		[F] = push_token("NUMBER")},
+		[F] = add_token("NUMBER")},
 	NUM_DEC = {
 		[range("0", "9")] = "NUM_DEC",
 		[list("e", "E")] = {
 			["-"] = {[range("0", "9")] = "NUM_EXP"},
 			[range("0", "9")] = "NUM_EXP"},
-		[F] = push_token("NUMBER")},
-	NUM_EXP = {[range("0", "9")] = "NUM_EXP", [F] = push_token("NUMBER")},
+		[F] = add_token("NUMBER")},
+	NUM_EXP = {[range("0", "9")] = "NUM_EXP", [F] = add_token("NUMBER")},
 	NUM_HEX = {
 		[range("0", "9")] = "NUM_HEX",
 		[range("a", "f")] = "NUM_HEX",
 		[range("A", "F")] = "NUM_HEX",
-		[F] = push_token("HEXNUM")},
-	ID = {[class_id()] = "ID", [F] = push_id()},
+		[F] = add_token("HEXNUM")},
+	ID = {[class_id()] = "ID", [F] = add_id()},
 	BRACKET = {
-		[F] = push_token() --[[Normal brackets - for table index]],
-		[G] = consume_block("STRING", nil, 0),
+		[F] = add_token() --[[Normal brackets - for table index]],
+		[G] = add_block("STRING", 0),
 		["["] = G,
 		["="] = "BRACKET2"},
 	BRACKET2 = {
-		[G] = consume_block("STRING", nil, 2),
+		[G] = add_block("STRING", 2),
 		["["] = G,
 		["="] = "BRACKET2"},
 	COMMENT = {
-		[F] = push_token("COMMENT"),
+		[F] = add_token("COMMENT"),
 		["["] = {
-			[F] = push_token("COMMENT"),
-			[G] = consume_block("COMMENT", nil, 0),
+			[F] = add_token("COMMENT"),
+			[G] = add_block("COMMENT", 0),
 			["="] = "CRACKET",
 			["["] = G,
 			[list("\r", "\n", "")] = F,
@@ -240,9 +240,9 @@ states = {
 		[ANY] = "COMMENT2"},
 	COMMENT2 = {
 		[except("\r", "\n")] = "COMMENT2",
-		[F] = push_token("COMMENT")},
+		[F] = add_token("COMMENT")},
 	CRACKET  = {
-		[G] = consume_block("COMMENT", nil, 0),
+		[G] = add_block("COMMENT", 0),
 		["["] = G,
 		["="] = "CRACKET",
 		[ANY] = "COMMENT2"},
