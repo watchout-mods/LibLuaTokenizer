@@ -32,7 +32,6 @@ describe("Tokenizer", function()
 		assert.are.same(expect, tok:Tokenize(str, cb.onlytoken));
 	end)
 
-
 	it("parses a simple string block on one line", function()
 		local str = [=[local foo=[[bar]]]=];
 		local expect = {"KEYWORD", "WHITESPACE", "ID", "=", "STRING"};
